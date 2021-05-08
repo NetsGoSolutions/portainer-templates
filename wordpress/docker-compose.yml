@@ -1,0 +1,41 @@
+version: '3.1'
+
+networks:
+  local:
+    external: false
+  global:
+    external: true
+
+services:
+
+  mysql:
+    image: mysql:8
+    networks:
+      - local
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASS}
+      - MYSQL_DATABASE=web_wordpress
+      - MYSQL_USER=admin_rw
+      - MYSQL_PASSWORD=${MYSQL_DB_PASS}
+    volumes:
+      - /srv/docker/wordpress_data/${NAME}/mariadb:/var/lib/mysql
+
+  wordpress:
+    image: wordpress
+    restart: always
+    networks:
+      - local
+      - global
+    environment:
+      - WORDPRESS_DB_HOST=mysql
+      - WORDPRESS_DB_USER=admin_rw
+      - WORDPRESS_DB_PASSWORD=${MYSQL_DB_PASS}
+      - WORDPRESS_DB_NAME=web_wordpress
+    depends_on:
+      - mysql
+    volumes:
+      - /srv/docker/wordpress_data/${NAME}/wordpress:/var/www/html
+    labels:
+      - "traefik.http.routers.wordpress_${NAME}.rule=Host(`${NAME}.netsgo.no`)"
+      - "traefik.http.routers.wordpress_${NAME}.tls=true"
+      - "traefik.docker.network=global"
